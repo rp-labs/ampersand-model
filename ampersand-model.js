@@ -3,6 +3,7 @@ var State = require('ampersand-state');
 var sync = require('ampersand-sync');
 var assign = require('lodash/assign');
 var isObject = require('lodash/isObject');
+var isFunction = require('lodash/isFunction');
 var clone = require('lodash/clone');
 var result = require('lodash/result');
 
@@ -15,7 +16,8 @@ var urlError = function () {
 var wrapError = function (model, options) {
     var error = options.error;
     options.error = function (resp) {
-        if (error) error(model, resp, options);
+        if (isFunction(error)) error(model, resp, options);
+        if (isFunction(options.finally)) options.finally(model, resp, options);
         model.trigger('error', model, resp, options);
     };
 };
@@ -54,7 +56,8 @@ var Model = State.extend({
             if (isObject(serverAttrs) && !model.set(serverAttrs, options)) {
                 return false;
             }
-            if (success) success(model, resp, options);
+            if (isFunction(success)) success(model, resp, options);
+            if (isFunction(options.finally)) options.finally(model, resp, options);
             model.trigger('sync', model, resp, options);
         };
         wrapError(this, options);
@@ -84,7 +87,8 @@ var Model = State.extend({
         var success = options.success;
         options.success = function (resp) {
             if (!model.set(model.parse(resp, options), options)) return false;
-            if (success) success(model, resp, options);
+            if (isFunction(success)) success(model, resp, options);
+            if (isFunction(options.finally)) options.finally(model, resp, options);
             model.trigger('sync', model, resp, options);
         };
         wrapError(this, options);
@@ -107,7 +111,8 @@ var Model = State.extend({
 
         options.success = function (resp) {
             if (options.wait || model.isNew()) destroy();
-            if (success) success(model, resp, options);
+            if (isFunction(success)) success(model, resp, options);
+            if (isFunction(options.finally)) options.finally(model, resp, options);
             if (!model.isNew()) model.trigger('sync', model, resp, options);
         };
 

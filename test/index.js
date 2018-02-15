@@ -12,6 +12,17 @@ var SuccessSync = function (method, model, options) {
     return Sync.call(this, method, model, options);
 };
 
+var SuccessSyncAndError = function (method, model, options) {
+    options.xhrImplementation = function (xhrOptions) {
+        setTimeout(function () {
+            xhrOptions.success();
+            xhrOptions.error();
+        }, 100);
+        return {};
+    };
+    return Sync.call(this, method, model, options);
+};
+
 test("url when using urlRoot, and uri encoding", function (t) {
     var Model = AmpersandModel.extend({
         props: {
@@ -59,4 +70,24 @@ test("has xhr on fetch/save/destroy", function (t) {
     model.fetch();
     model.save();
     model.destroy();
+});
+
+test("Should properly call `finally` on success/error", function (t) {
+  t.plan(5);
+
+  var Model = AmpersandModel.extend({
+    urlRoot: 'fake/url',
+    sync: SuccessSyncAndError,
+  });
+
+  var options = {
+    finally: function () {
+      t.ok(true);
+    },
+  };
+
+  var model = new Model();
+  model.fetch(options);
+  model.save('', '', options);
+  model.destroy(options);
 });
